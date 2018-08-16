@@ -304,13 +304,13 @@ def main():
 
 	rospy.init_node('image_listener')
 	image_topic = "/head_camera/rgb/image_raw"
-	rospy.Subscriber(image_topic, Image, image_callback)
+	# rospy.Subscriber(image_topic, Image, image_callback)
 
 	while not rospy.is_shutdown():
-		plt.pause(0.001)
-		# print "Loop!"
 		try:
 			fig.canvas.draw()
+			msg = rospy.wait_for_message(image_topic, Image)
+			image_callback(msg)
 		except KeyboardInterrupt:
 			break
 
