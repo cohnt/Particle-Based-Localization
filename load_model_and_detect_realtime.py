@@ -2,7 +2,9 @@
 
 import rospy
 import os
+import thread
 import pickle
+import signal
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -54,6 +56,12 @@ bridge = CvBridge()
 
 lastmsg = 0
 
+ready_lock = thread.allocate_lock()
+
+def get_image(image_topic):
+	msg = rospy.wait_for_message(image_topic, Image)
+	image_callback(msg)
+
 def image_callback(msg):
 	# global lastmsg, ready
 	# print "Received an image."
@@ -61,16 +69,14 @@ def image_callback(msg):
 	# 	lastmsg = msg
 	# 	process_image()
 
-	global lastmsg, ready
+	global lastmsg, ready, ready_lock
+	with ready_lock:
+		ready = False
 	print "Received an image."
-	if ready:
-		lastmsg = msg
-		try:
-			process_image()
-		except:
-			ready = True
-	else:
-		return
+	lastmsg = msg
+	process_image()
+	with ready_lock:
+		ready = True
 
 def process_image():
 	# myTime = rospy.get_time()
@@ -79,9 +85,7 @@ def process_image():
 	# print "Message time: %s" % yourTime
 	# print "Elapsed: %s" % (myTime-yourTime)
 
-	global lastmsg, im1, im2, new_img, imgObj, ready, fd, hog_image, hog_image_rescaled
-
-	ready = False
+	global lastmsg, im1, im2, new_img, imgObj, ready, ready_lock, fd, hog_image, hog_image_rescaled
 
 	print "Processing an image"
 	msg = lastmsg
@@ -117,8 +121,6 @@ def process_image():
 
 		if learned:
 			predictImage()
-
-		ready = True
 
 class WindowIndicator(object):
 	def __init__(self, ax):
@@ -307,10 +309,14 @@ def main():
 	# rospy.Subscriber(image_topic, Image, image_callback)
 
 	while not rospy.is_shutdown():
+		plt.pause(0.01)
 		try:
 			fig.canvas.draw()
-			msg = rospy.wait_for_message(image_topic, Image)
-			image_callback(msg)
+			temp_ready = 0
+			with ready_lock:
+				temp_ready = ready
+			if temp_ready:
+				thread.start_new_thread(get_image, (image_topic,))
 		except KeyboardInterrupt:
 			break
 
