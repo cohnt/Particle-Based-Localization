@@ -143,6 +143,9 @@ class Detector:
 				)
 
 	def updateDisplay(self):
+		if not self.visualize:
+			raise RuntimeError("This detector has visualization disabled!")
+
 		# Rescale hog image for better display
 		self.rescaledImage = exposure.rescale_intensity(self.hogImage, in_range=(0, 10))
 
