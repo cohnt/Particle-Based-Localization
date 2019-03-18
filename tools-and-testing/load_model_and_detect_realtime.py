@@ -56,10 +56,15 @@ bridge = CvBridge()
 
 lastmsg = 0
 
-ready_lock = thread.allocate_lock()
+patchesList = []
+
+patchesReady = False
+image_lock = thread.allocate_lock()
+patches_lock = thread.allocate_lock()
 
 def get_image(image_topic):
 	msg = rospy.wait_for_message(image_topic, Image)
+	print "Received an image."
 	image_callback(msg)
 
 def image_callback(msg):
@@ -69,13 +74,10 @@ def image_callback(msg):
 	# 	lastmsg = msg
 	# 	process_image()
 
-	global lastmsg, ready, ready_lock
-	with ready_lock:
-		ready = False
-	print "Received an image."
+	global lastmsg, ready, image_lock
 	lastmsg = msg
 	process_image()
-	with ready_lock:
+	with image_lock:
 		ready = True
 
 def process_image():
@@ -85,7 +87,7 @@ def process_image():
 	# print "Message time: %s" % yourTime
 	# print "Elapsed: %s" % (myTime-yourTime)
 
-	global lastmsg, im1, im2, new_img, imgObj, ready, ready_lock, fd, hog_image, hog_image_rescaled
+	global lastmsg, im1, im2, new_img, imgObj, ready, image_lock, fd, hog_image, hog_image_rescaled
 
 	print "Processing an image"
 	msg = lastmsg
@@ -118,6 +120,8 @@ def process_image():
 		endTime = time.time();
 		# print "Done! ",
 		# print "Time: %s" % (endTime-startTime)
+
+		print "Learned: ", learned
 
 		if learned:
 			predictImage()
@@ -220,9 +224,10 @@ def classify(cell_id):
 	return svc.predict(temp)
 
 def predictImage():
-	global fd, svc, ax, db, window_size, cell_size
+	global fd, svc, ax, db, window_size, cell_size, patchesList, patchesReady
 
-	[p.remove() for p in reversed(ax.patches)]
+	with patches_lock:
+		patchesList = []
 
 	guesses = []
 
@@ -233,15 +238,16 @@ def predictImage():
 			if classify(cell_id):
 				# print "Yes!"
 				guesses.append(cell_id)
-				ax.add_patch(
-					patches.Rectangle(
-						(j*cell_size[0]+(0.5*(window_size[0]*cell_size[0])), i*cell_size[1]+(0.5*(window_size[1]*cell_size[1]))),
-						2,
-						2,
-						fill=False,
-						edgecolor="blue"
+				with patches_lock:
+					patchesList.append(
+						patches.Rectangle(
+							(j*cell_size[0]+(0.5*(window_size[0]*cell_size[0])), i*cell_size[1]+(0.5*(window_size[1]*cell_size[1]))),
+							2,
+							2,
+							fill=False,
+							edgecolor="blue"
+						)
 					)
-				)
 			# else:
 				# print ""
 	guesses = np.array(guesses)
@@ -265,15 +271,22 @@ def predictImage():
 		print(xy)
 		centroid = np.mean(xy, axis=0)
 		print(centroid)
-		ax.add_patch(
-			patches.Rectangle(
-				(centroid[0, 1]*cell_size[0], centroid[0, 0]*cell_size[1]),
-				window_size[0]*cell_size[0],
-				window_size[1]*cell_size[1],
-				fill=False,
-				edgecolor="blue"
+		with patches_lock:
+			patchesList.append(
+				patches.Rectangle(
+					(centroid[0, 1]*cell_size[0], centroid[0, 0]*cell_size[1]),
+					window_size[0]*cell_size[0],
+					window_size[1]*cell_size[1],
+					fill=False,
+					edgecolor="blue"
+				)
 			)
-		)
+	patchesReady = True
+
+def updatePatches(ps):
+	[p.remove() for p in reversed(ax.patches)]
+	for p in ps:
+		ax.add_patch(p)
 
 def openModel():
 	global isHandleData, notHandleData, learned
@@ -287,7 +300,7 @@ def openModel():
 		print np.shape(notHandleData)
 
 def main():
-	global db
+	global db, ready, patchesReady, patchesList
 
 	openModel()
 	learn()
@@ -312,11 +325,15 @@ def main():
 		plt.pause(0.01)
 		try:
 			fig.canvas.draw()
-			temp_ready = 0
-			with ready_lock:
-				temp_ready = ready
-			if temp_ready:
-				thread.start_new_thread(get_image, (image_topic,))
+			with image_lock:
+				if ready:
+					ready = False
+					print "Spawning new thread to get an image"
+					thread.start_new_thread(get_image, (image_topic,))
+			with patches_lock:
+				if patchesReady:
+					updatePatches(patchesList)
+					patchesReady = False
 		except KeyboardInterrupt:
 			break
 
