@@ -60,6 +60,7 @@ imgToDisp = None
 
 newImageReady = True
 dispImageReady = True
+clearReady = False
 patchesReady = False
 imageDispReady = False
 new_image_lock = thread.allocate_lock()
@@ -235,9 +236,10 @@ def classify(cell_id):
 	return svc.predict(temp)
 
 def predictImage():
-	global fd, svc, ax, db, window_size, cell_size, patchesList, patchesReady
+	global fd, svc, ax, db, window_size, cell_size, patchesList, patchesReady, clearReady
 
 	with patches_lock:
+		clearReady = True
 		patchesList = []
 
 	guesses = []
@@ -259,6 +261,7 @@ def predictImage():
 							edgecolor="blue"
 						)
 					)
+					patchesReady = True
 			# else:
 				# print ""
 	guesses = np.array(guesses)
@@ -292,16 +295,16 @@ def predictImage():
 					edgecolor="blue"
 				)
 			)
-	patchesReady = True
+			patchesReady = True
 
 def clearPatches():
 	[p.remove() for p in reversed(ax.patches)]
 	#
 
 def updatePatches(ps):
-	clearPatches()
 	for p in ps:
 		ax.add_patch(p)
+	ps = []
 
 def drawImage(img):
 	global imgObj
@@ -322,7 +325,7 @@ def openModel():
 		print np.shape(notHandleData)
 
 def main():
-	global db, newImageReady, patchesReady, patchesList, imageDispReady
+	global db, newImageReady, patchesReady, patchesList, imageDispReady, clearReady
 
 	openModel()
 	learn()
@@ -355,10 +358,12 @@ def main():
 			with disp_image_lock:
 				if imageDispReady:
 					print "Displaying image"
-					clearPatches()
 					drawImage(imgToDisp)
-					# imageDispReady = False
+					imageDispReady = False
 			with patches_lock:
+				if clearReady:
+					clearPatches()
+					clearReady = False
 				if patchesReady:
 					updatePatches(patchesList)
 					patchesReady = False
