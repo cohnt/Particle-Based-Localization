@@ -1,6 +1,8 @@
 import rospy
 import os
 import pickle
+import time
+
 from sensor_msgs.msg import Image as ImageMsg
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -68,6 +70,8 @@ class Detector:
 
 	def processImage(self):
 		# Convert to OpenCV2 image format
+		print "Processing image... ",
+		startTime = time.time()
 		try:
 			self.image = self.bridge.imgmsg_to_cv2(self.imageMsg, "bgr8")
 		except CvBridgeError, e:
@@ -82,6 +86,9 @@ class Detector:
 		                                        visualise=True,
 		                                        feature_vector=False,
 		                                        block_norm=self.hogNorm)
+
+		endTime = time.time()
+		print "Done! dt=%s" % (endTime - startTime)
 
 		# Run the sliding window detector
 		self.predictImage()
@@ -99,6 +106,8 @@ class Detector:
 			# Clear old visual markers
 			[p.remove() for p in reversed(self.ax.patches)]
 
+		print "Predicting image... ",
+		startTime = time.time()
 		# Classify across the entire image with the sliding window detector
 		guesses = []
 		for i in range(0, np.shape(self.hogDescriptor)[0]-self.windowSize[1]):
@@ -141,6 +150,9 @@ class Detector:
 						edgecolor="blue"
 					)
 				)
+
+		endTime = time.time()
+		print "Done! dt=%s" % (endTime - startTime)
 
 	def updateDisplay(self):
 		if not self.visualize:
