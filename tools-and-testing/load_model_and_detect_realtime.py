@@ -32,7 +32,6 @@ cell_size = (8, 8) # x, y
 window_size = (16, 16) # x, y
 
 plt.ion()
-ready = True
 
 fig, ax = plt.subplots()
 ax.axis('off')
@@ -45,7 +44,7 @@ fd = 0
 
 svc = 0
 learned = False
-imageMode = False
+imageMode = True
 
 clusterMaxDistance = 3
 clusterMinSamples = 5
@@ -57,9 +56,14 @@ bridge = CvBridge()
 lastmsg = 0
 
 patchesList = []
+imgToDisp = None
 
+newImageReady = True
+dispImageReady = True
 patchesReady = False
-image_lock = thread.allocate_lock()
+imageDispReady = False
+new_image_lock = thread.allocate_lock()
+disp_image_lock = thread.allocate_lock()
 patches_lock = thread.allocate_lock()
 
 def get_image(image_topic):
@@ -68,17 +72,17 @@ def get_image(image_topic):
 	image_callback(msg)
 
 def image_callback(msg):
-	# global lastmsg, ready
+	# global lastmsg, newImageReady
 	# print "Received an image."
-	# if ready:
+	# if newImageReady:
 	# 	lastmsg = msg
 	# 	process_image()
 
-	global lastmsg, ready, image_lock
+	global lastmsg, newImageReady, new_image_lock
 	lastmsg = msg
 	process_image()
-	with image_lock:
-		ready = True
+	with new_image_lock:
+		newImageReady = True
 
 def process_image():
 	# myTime = rospy.get_time()
@@ -87,7 +91,7 @@ def process_image():
 	# print "Message time: %s" % yourTime
 	# print "Elapsed: %s" % (myTime-yourTime)
 
-	global lastmsg, im1, im2, new_img, imgObj, ready, image_lock, fd, hog_image, hog_image_rescaled
+	global lastmsg, im1, im2, new_img, imgObj, newImageReady, new_image_lock, fd, hog_image, hog_image_rescaled, imgToDisp, imageDispReady
 
 	print "Processing an image"
 	msg = lastmsg
@@ -98,30 +102,36 @@ def process_image():
 		# print "Done!"
 	except CvBridgeError, e:
 		print(e)
-		ready = True
+		newImageReady = True
 	else:
 		# print "Processing... ",
-		startTime = time.time()
+		# startTime = time.time()
 		fd, hog_image = hog(rgb2gray(img), orientations=8, pixels_per_cell=cell_size, cells_per_block=(1, 1), visualise=True, feature_vector=False, block_norm='L2')
 		hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 10))
-		endTime = time.time()
+		# endTime = time.time()
 		# print "Done! ",
 
 		# print "Time: %s" % (endTime-startTime)
 
 		# print "Updating display... ",
-		startTime = time.time()
-		if imgObj == 0:
-			imgObj = ax.imshow(hog_image_rescaled, cmap=plt.cm.gray)
-		elif not imageMode:
-			imgObj.set_data(hog_image_rescaled)
-		else:
-			imgObj.set_data(img)
-		endTime = time.time();
+		# startTime = time.time()
+		# if imgObj == 0:
+		# 	imgObj = ax.imshow(hog_image_rescaled, cmap=plt.cm.gray)
+		# elif not imageMode:
+		# 	imgObj.set_data(hog_image_rescaled)
+		# else:
+		# 	imgObj.set_data(img)
+		# endTime = time.time();
 		# print "Done! ",
 		# print "Time: %s" % (endTime-startTime)
 
-		print "Learned: ", learned
+		with disp_image_lock:
+			if imageMode:
+				imgToDisp = img
+			else:
+				imgToDisp = hog_image_rescaled
+			print "Image ready to display"
+			imageDispReady = True
 
 		if learned:
 			predictImage()
@@ -154,7 +164,8 @@ def clickClassify(cell_id):
 	temp = np.reshape(temp, (1, -1))
 
 	print "Predicted:"
-	print svc.predict(temp)
+	# print svc.predict(temp)
+	svc.predict(temp)
 
 def onclick(event):
 	global fd, isHandleData, notHandleData, svc, cell_size, window_size, learned
@@ -254,7 +265,7 @@ def predictImage():
 	db.fit(guesses)
 	labels = db.labels_
 	unique_labels = set(labels)
-	print(db.labels_)
+	# print(db.labels_)
 	numLabels = len(unique_labels)
 	print "Found %s clusters" % numLabels
 	for k in unique_labels:
@@ -268,9 +279,9 @@ def predictImage():
 		# print guesses
 		# print np.shape(guesses)
 		xy = np.matrix(guesses[class_member_mask])
-		print(xy)
+		# print(xy)
 		centroid = np.mean(xy, axis=0)
-		print(centroid)
+		# print(centroid)
 		with patches_lock:
 			patchesList.append(
 				patches.Rectangle(
@@ -283,10 +294,21 @@ def predictImage():
 			)
 	patchesReady = True
 
-def updatePatches(ps):
+def clearPatches():
 	[p.remove() for p in reversed(ax.patches)]
+	#
+
+def updatePatches(ps):
+	clearPatches()
 	for p in ps:
 		ax.add_patch(p)
+
+def drawImage(img):
+	global imgObj
+	if imgObj == 0:
+		imgObj = ax.imshow(img, cmap=plt.cm.gray)
+	else:
+		imgObj.set_data(img)
 
 def openModel():
 	global isHandleData, notHandleData, learned
@@ -300,7 +322,7 @@ def openModel():
 		print np.shape(notHandleData)
 
 def main():
-	global db, ready, patchesReady, patchesList
+	global db, newImageReady, patchesReady, patchesList, imageDispReady
 
 	openModel()
 	learn()
@@ -325,11 +347,17 @@ def main():
 		plt.pause(0.01)
 		try:
 			fig.canvas.draw()
-			with image_lock:
-				if ready:
-					ready = False
+			with new_image_lock:
+				if newImageReady:
+					newImageReady = False
 					print "Spawning new thread to get an image"
 					thread.start_new_thread(get_image, (image_topic,))
+			with disp_image_lock:
+				if imageDispReady:
+					print "Displaying image"
+					clearPatches()
+					drawImage(imgToDisp)
+					# imageDispReady = False
 			with patches_lock:
 				if patchesReady:
 					updatePatches(patchesList)
