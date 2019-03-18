@@ -105,14 +105,13 @@ def process_image():
 		print(e)
 		newImageReady = True
 	else:
-		# print "Processing... ",
-		# startTime = time.time()
+		print "Processing... ",
+		startTime = time.time()
 		fd, hog_image = hog(rgb2gray(img), orientations=8, pixels_per_cell=cell_size, cells_per_block=(1, 1), visualise=True, feature_vector=False, block_norm='L2')
 		hog_image_rescaled = exposure.rescale_intensity(hog_image, in_range=(0, 10))
-		# endTime = time.time()
-		# print "Done! ",
-
-		# print "Time: %s" % (endTime-startTime)
+		endTime = time.time()
+		print "Done! ",
+		print "Time: %s" % (endTime-startTime)
 
 		# print "Updating display... ",
 		# startTime = time.time()
@@ -224,6 +223,10 @@ def onkeypress(event):
 		learn()
 	elif event.key == "i": # Switch mode from HOG to image
 		imageMode = not imageMode
+		if imageMode:
+			print "Now in display image mode."
+		else:
+			print "Now in display HOG mode."
 
 def classify(cell_id):
 	global fd, svc
@@ -243,6 +246,9 @@ def predictImage():
 		patchesList = []
 
 	guesses = []
+
+	print "Predicting... ",
+	startTime = time.time()
 
 	for i in range(0, np.shape(fd)[0]-window_size[1]):
 		for j in range(0, np.shape(fd)[1]-window_size[0]):
@@ -296,6 +302,9 @@ def predictImage():
 				)
 			)
 			patchesReady = True
+	endTime = time.time()
+	print "Done! ",
+	print "Time: %s" % (endTime-startTime)
 
 def clearPatches():
 	[p.remove() for p in reversed(ax.patches)]
