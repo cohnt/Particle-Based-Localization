@@ -69,8 +69,13 @@ ax.add_patch(circle1)
 ax.add_patch(circle2)
 
 plt.draw()
+
+# Wait for a mouse click
+while plt.waitforbuttonpress():
+	pass
+
 # while True:
-for _ in range(0, 50):
+for _ in range(0, 100):
 	filter.measureParticles(actual)
 	filter.calculateWeights()
 	filter.resample()
@@ -92,4 +97,6 @@ for _ in range(0, 50):
 	fig.canvas.draw_idle()
 	plt.pause(0.0001)
 
-plt.waitforbuttonpress()
+# Wait for a mouse click
+while plt.waitforbuttonpress():
+	pass
