@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from random import random
+import matplotlib.pyplot as plt
 
 import sys
 sys.path.append("..")
@@ -48,7 +49,33 @@ def myMetric(particle, observation):
 filter = ParticleFilter(100, myParticle, myMetric, 0.05, 5)
 filter.generateParticles()
 
-for i in range(0, 100):
+
+# plt.ion()
+# fig, ax = plt.subplots()
+# x, y = [],[]
+# sc = ax.scatter(x,y)
+# plt.xlim(0,10)
+# plt.ylim(0,10)
+
+# plt.draw()
+# for i in range(1000):
+#     x.append(np.random.rand(1)*10)
+#     y.append(np.random.rand(1)*10)
+#     sc.set_offsets(np.c_[x,y])
+#     fig.canvas.draw_idle()
+#     plt.pause(0.1)
+
+# plt.waitforbuttonpress()
+
+plt.ion()
+fig, ax = plt.subplots()
+x, y = [], []
+scatterObj = ax.scatter(x, y) # Returns a tuple of line objects, thus the comma
+plt.xlim(-100, 100)
+plt.ylim(-100, 100)
+
+plt.draw()
+while True:
 	filter.measureParticles([43, 43])
 	filter.calculateWeights()
 	filter.resample()
@@ -56,3 +83,12 @@ for i in range(0, 100):
 	# for particle in filter.particles:
 	# 	print particle.pos
 	filter.update(None)
+
+	x, y = [], []
+	for particle in filter.particles:
+		x.append(particle.pos[0])
+		y.append(particle.pos[1])
+
+	scatterObj.set_offsets(np.c_[x,y])
+	fig.canvas.draw_idle()
+	plt.pause(0.001)
