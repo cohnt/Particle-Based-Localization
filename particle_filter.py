@@ -22,7 +22,7 @@ class Particle:
 		pass
 
 	@abstractmethod
-	def addNoise(self, noise): # Noisify? XD
+	def addNoise(self, noiseFactor): # Noisify? XD
 		pass
 
 	@abstractmethod
@@ -46,19 +46,23 @@ class Particle:
 		pass
 
 class ParticleFilter:
-	def __init__(self, numParticles, particleType, metric, explorationFactor=0):
+	def __init__(self, numParticles, particleType, metric, explorationFactor=0, noiseFactor=0.01):
 		self.numParticles = numParticles
 		self.particleType = particleType
 		self.metric = metric
 
 		try:
 			_p = self.particleType()
-		except TypeError
+		except TypeError:
 			print("Particle class %s must have default constructor %s()." % (self.particleType.__name__, self.particleType.__name__))
 			raise(TypeError)
-		self.particles = self.numParticles*[particleType()]
+
+		self.particles = self.numParticles*[None]
+		for i in range(0, len(self.particles)):
+			self.particles[i] = self.particleType()
 
 		self.explorationFactor = explorationFactor
+		self.noiseFactor = noiseFactor
 
 	def generateParticles(self):
 		for particle in self.particles:
@@ -80,7 +84,7 @@ class ParticleFilter:
 		# Compute raw weights
 		weights = np.zeros(error.size)
 		for i in range(0, error.size):
-			weights[i] = np.pow(np.e, -np.pow(error[i], 2)/(2*v)) * m
+			weights[i] = np.power(np.e, -np.power(error[i], 2)/(2*v)) * m
 
 		# Normalize
 		total = np.sum(weights)
@@ -92,7 +96,7 @@ class ParticleFilter:
 
 	def resample(self):
 		weights = []
-		for particle in self.particles
+		for particle in self.particles:
 			weights.append(particle.getWeight())
 		weights = np.array(weights)
 
@@ -100,23 +104,28 @@ class ParticleFilter:
 		step = 1/(self.numParticles * (1 - self.explorationFactor) + 1)
 		chkVal = step
 		chkIndex = 0
-		newParticles = self.numParticles*[particleType()]
+		newParticles = self.numParticles*[None]
 
-		for i in range(0, self.numParticles * (1 - self.explorationFactor)):
+		maxInd = int(np.ceil(self.numParticles * (1 - self.explorationFactor)))
+
+		for i in range(0, maxInd):
 			while cs[chkIndex] < chkVal:
 				chkIndex = chkIndex + 1
 			chkVal = chkVal + step
+			newParticles[i] = self.particleType()
 			newParticles[i].setPrediction(self.particles[chkIndex].getPrediction())
 			newParticles[i].addNoise(self.noiseFactor)
 
-		for i in range(self.numParticles * (1 - self.explorationFactor), self.numParticles):
+		for i in range(maxInd, self.numParticles):
+			newParticles[i] = self.particleType()
 			newParticles[i].randomize()
 
 		self.particles = newParticles
 
 	def predict(self):
 		predictions = []
-		for i in range(0, self.particles * (1 - self.explorationFactor)):
+		maxInd = int(np.ceil(self.numParticles * (1 - self.explorationFactor)))
+		for i in range(0, maxInd):
 			predictions.append(self.particles[i].getPrediction())
 		predictions = np.array(predictions)
 		return np.mean(predictions, axis=0)
