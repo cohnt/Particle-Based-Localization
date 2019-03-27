@@ -8,6 +8,10 @@ import sys
 sys.path.append("..")
 from particle_filter import *
 
+window = (100, 100)
+circSize = window[0] / 25
+actual = [43, 43]
+
 class myParticle(Particle):
 	def __init__(self, pos=[0, 0]):
 		self.pos = [0, 0]
@@ -15,7 +19,7 @@ class myParticle(Particle):
 		self.weight = 0
 
 	def randomize(self):
-		self.pos = [random()*200-100, random()*200-100]
+		self.pos = [random()*2*window[0]-window[0], random()*2*window[1]-window[1]]
 
 	def setPrediction(self, prediction):
 		self.pos = prediction[:]
@@ -42,47 +46,42 @@ class myParticle(Particle):
 	def update(self, newData):
 		pass
 
+def dist2(v1, v2):
+	return (v1[0]-v2[0])**2 + (v1[1]-v2[1])**2
+
 def myMetric(particle, observation):
 	prediction = particle.getPrediction()
-	return (prediction[0]-observation[0])**2 + (prediction[1]-observation[1])**2
+	return dist2(prediction, observation)
 
-filter = ParticleFilter(100, myParticle, myMetric, 0.05, 5)
+filter = ParticleFilter(500, myParticle, myMetric, 0.05, float(window[0])/100.0)
 filter.generateParticles()
-
-
-# plt.ion()
-# fig, ax = plt.subplots()
-# x, y = [],[]
-# sc = ax.scatter(x,y)
-# plt.xlim(0,10)
-# plt.ylim(0,10)
-
-# plt.draw()
-# for i in range(1000):
-#     x.append(np.random.rand(1)*10)
-#     y.append(np.random.rand(1)*10)
-#     sc.set_offsets(np.c_[x,y])
-#     fig.canvas.draw_idle()
-#     plt.pause(0.1)
-
-# plt.waitforbuttonpress()
 
 plt.ion()
 fig, ax = plt.subplots()
 x, y = [], []
 scatterObj = ax.scatter(x, y) # Returns a tuple of line objects, thus the comma
-plt.xlim(-100, 100)
-plt.ylim(-100, 100)
+plt.xlim(-window[0], window[0])
+plt.ylim(-window[1], window[1])
+
+circle1 = plt.Circle((43, 43), circSize, color='r')
+circle2 = plt.Circle((0, 0), circSize, color='g')
+ax.add_patch(circle1)
+ax.add_patch(circle2)
 
 plt.draw()
-while True:
-	filter.measureParticles([43, 43])
+# while True:
+for _ in range(0, 50):
+	filter.measureParticles(actual)
 	filter.calculateWeights()
 	filter.resample()
-	print(filter.predict())
+	filter.predict()
+	prediction = filter.predict()
+	circle2.center = tuple(prediction)
 	# for particle in filter.particles:
 	# 	print particle.pos
 	filter.update(None)
+
+	print("Error: %d" % dist2(prediction, actual))
 
 	x, y = [], []
 	for particle in filter.particles:
@@ -91,4 +90,6 @@ while True:
 
 	scatterObj.set_offsets(np.c_[x,y])
 	fig.canvas.draw_idle()
-	plt.pause(0.001)
+	plt.pause(0.0001)
+
+plt.waitforbuttonpress()
