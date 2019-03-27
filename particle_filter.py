@@ -22,6 +22,10 @@ class Particle:
 		pass
 
 	@abstractmethod
+	def addNoise(self, noise): # Noisify? XD
+		pass
+
+	@abstractmethod
 	def setError(self, error):
 		pass
 
@@ -35,6 +39,10 @@ class Particle:
 
 	@abstractmethod
 	def getWeight(self):
+		pass
+
+	@abstractmethod
+	def update(self, newData):
 		pass
 
 class ParticleFilter:
@@ -83,13 +91,36 @@ class ParticleFilter:
 			particle.setWeight(weight)
 
 	def resample(self):
-		pass
+		weights = []
+		for particle in self.particles
+			weights.append(particle.getWeight())
+		weights = np.array(weights)
 
-	def updateParticles(self):
-		pass
+		cs = np.cumsum(weights)
+		step = 1/(self.numParticles * (1 - self.explorationFactor) + 1)
+		chkVal = step
+		chkIndex = 0
+		newParticles = self.numParticles*[particleType()]
+
+		for i in range(0, self.numParticles * (1 - self.explorationFactor)):
+			while cs[chkIndex] < chkVal:
+				chkIndex = chkIndex + 1
+			chkVal = chkVal + step
+			newParticles[i].setPrediction(self.particles[chkIndex].getPrediction())
+			newParticles[i].addNoise(self.noiseFactor)
+
+		for i in range(self.numParticles * (1 - self.explorationFactor), self.numParticles):
+			newParticles[i].randomize()
+
+		self.particles = newParticles
 
 	def predict(self):
-		pass
+		predictions = []
+		for i in range(0, self.particles * (1 - self.explorationFactor)):
+			predictions.append(self.particles[i].getPrediction())
+		predictions = np.array(predictions)
+		return np.mean(predictions, axis=0)
 
-	def update(self):
-		pass
+	def update(self, newData):
+		for particle in self.particles:
+			particle.update(newData)
