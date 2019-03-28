@@ -73,19 +73,19 @@ def main():
 
 	detector = FakeDetector("fake_detector")
 	transformer = Transformer("transformer")
-	filter = ParticleFilter(2500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.01, averageType="weighted")
-	filter.generateParticles()
-	viz = PFViz(filter, "/odom", "myViz")
+	pf = ParticleFilter(2500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
+	pf.generateParticles()
+	viz = PFViz(pf, "/odom", "myViz")
 
 	while not rospy.is_shutdown():
 		try:
 			pixels = detector.fakeDetect()
 			startPoint, endPoints = transformer.transform(pixels)
-			filter.measureParticles((startPoint[:-1], np.asarray(endPoints)[:,:-1]))
-			filter.calculateWeights()
-			filter.resample()
-			prediction = filter.predict()
-			filter.update(None)
+			pf.measureParticles((startPoint[:-1], np.asarray(endPoints)[:,:-1]))
+			pf.calculateWeights()
+			pf.resample()
+			prediction = pf.predict()
+			pf.update(None)
 			viz.update()
 		except KeyboardInterrupt:
 			break
