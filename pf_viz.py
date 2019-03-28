@@ -14,8 +14,6 @@ class PFViz():
 		self.pcPub  = rospy.Publisher("%s_pc" % self.name, PointCloud, queue_size=self.queue_size)
 		self.markerPub = rospy.Publisher("%s_marker" % self.name, MarkerArrayMsg, queue_size=self.queue_size)
 
-		rospy.init_node(self.name)
-
 	def update(self):
 		pc = PointCloud()
 

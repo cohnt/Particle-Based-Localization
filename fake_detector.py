@@ -18,7 +18,6 @@ class FakeDetector():
 		self.cameraFOV = np.array([54.0, 45.0]) * math.pi / 180.0
 		self.imageDims = np.array([320.0, 240.0])
 
-		rospy.init_node("%s_fake" % self.name)
 		self.tfListener = tf.TransformListener()
 
 	def unit_vector(self, vector):

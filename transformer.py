@@ -15,7 +15,6 @@ class Transformer:
 		self.FOV = FOV
 		self.depth = 1.0
 
-		rospy.init_node("%s_tf" % self.name)
 		self.tfListener = tf.TransformListener()
 
 	def transform(self, points):
@@ -58,4 +57,4 @@ class Transformer:
 			except:
 				print "Waiting for transform..."
 
-		return newPoints
+		return (startPoint, newPoints)
