@@ -35,8 +35,8 @@ class PFViz():
 		marker.scale.y = 0.05
 		marker.scale.z = 0.05
 		marker.color.a = 1
-		marker.color.r = 1
-		marker.color.g = 1
+		marker.color.r = 0
+		marker.color.g = 0
 		marker.color.b = 1
 		marker.pose.position.x = prediction[0]
 		marker.pose.position.y = prediction[1]
