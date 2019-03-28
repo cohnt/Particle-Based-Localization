@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+averageTypes = ["unweighted", "weighted"]
+
 class Particle:
 	__metaclass__ = ABCMeta
 	
@@ -46,7 +48,7 @@ class Particle:
 		pass
 
 class ParticleFilter:
-	def __init__(self, numParticles, particleType, metric, explorationFactor=0, noiseFactor=0.01):
+	def __init__(self, numParticles, particleType, metric, explorationFactor=0, noiseFactor=0.01, averageType="weighted"):
 		self.numParticles = numParticles
 		self.particleType = particleType
 		self.metric = metric
@@ -63,6 +65,13 @@ class ParticleFilter:
 
 		self.explorationFactor = explorationFactor
 		self.noiseFactor = noiseFactor
+
+		self.averageType = averageType
+		if self.averageType not in averageTypes:
+			print "averageType %s not found. Please use one of the following:"
+			for avg in averageTypes:
+				print avg
+			raise(ValueError)
 
 	def generateParticles(self):
 		for particle in self.particles:
@@ -124,11 +133,17 @@ class ParticleFilter:
 
 	def predict(self):
 		predictions = []
+		weights = []
 		maxInd = int(np.ceil(self.numParticles * (1 - self.explorationFactor)))
 		for i in range(0, maxInd):
 			predictions.append(self.particles[i].getPrediction())
+			weights.append(self.particles[i].getWeight())
 		predictions = np.array(predictions)
-		return np.mean(predictions, axis=0)
+		weights = np.array(weights)
+		if(np.sum(weights) == 0):
+			return np.average(predictions, axis=0)
+		else:
+			return np.average(predictions, weights=weights, axis=0)
 
 	def update(self, newData):
 		for particle in self.particles:

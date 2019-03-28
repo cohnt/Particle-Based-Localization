@@ -73,7 +73,7 @@ def main():
 
 	detector = FakeDetector("fake_detector")
 	transformer = Transformer("transformer")
-	filter = ParticleFilter(2500, HParticle, metric, 0.1, 0.01)
+	filter = ParticleFilter(2500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.01, averageType="weighted")
 	filter.generateParticles()
 	viz = PFViz(filter, "/odom", "myViz")
 
