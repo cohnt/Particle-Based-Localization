@@ -12,6 +12,10 @@ from fake_detector import FakeDetector
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
+numItersPerSample = 1
+numHist = 5
+randHist = True
+
 class HParticle():
 	def __init__(self, pos=[0, 0, 0]):
 		self.pos = [0, 0, 0]
@@ -56,18 +60,22 @@ def pointLineDist(point, line):
 
 def metric(particle, history):
 	best = []
-	# indices = random.sample(range(len(history)-1), min(5, len(history)-1))
-	# indices.append(len(history)-1)
+	indices = None
 
-	# for i in indices:
-	for i in range(max(0, len(history)-5), len(history)):
+	if randHist:
+		indices = random.sample(range(len(history)-1), min(5, len(history)-1))
+		indices.append(len(history)-1)
+	else:
+		indices = range(max(0, len(history)-5), len(history))
+
+	for i in indices:
 		startPoint = history[i][0]
 		endPoints = history[i][1]
 
 		dists = []
 		for i in range(0, len(endPoints)):
 			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
-			d = np.power(d, 0.5)
+			d = np.power(d, 0.25)
 			dists.append(d)
 
 		best.append(np.min(dists))
@@ -91,14 +99,15 @@ def main():
 
 			startPoint, endPoints = transformer.transform(pixels)
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
-			pf.measureParticles(history)
-			pf.calculateWeights()
+			for _ in range(0, numItersPerSample):
+				pf.measureParticles(history)
+				pf.calculateWeights()
 
-			prediction = pf.predict()
-			viz.update()
+				prediction = pf.predict()
+				viz.update()
 
-			pf.resample()
-			pf.update(None)
+				pf.resample()
+				pf.update(None)
 		except KeyboardInterrupt:
 			break
 
