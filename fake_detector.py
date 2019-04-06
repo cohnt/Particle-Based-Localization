@@ -9,6 +9,8 @@ import numpy as np
 from nav_msgs.msg import Odometry as OdometryMsg
 from geometry_msgs.msg import PointStamped as PointStampedMsg
 from geometry_msgs.msg import Point as PointMsg
+from sensor_msgs.msg import PointCloud, ChannelFloat32
+from geometry_msgs.msg import Point32
 from tf2_msgs.msg import TFMessage as TFMsg
 
 from cv2 import projectPoints
@@ -21,6 +23,8 @@ class FakeDetector():
 		self.imageDims = np.array([320.0, 240.0])
 
 		self.tfListener = tf.TransformListener()
+
+		self.pub = rospy.Publisher(name, PointCloud, queue_size=10)
 
 	def unit_vector(self, vector):
 		return vector / np.linalg.norm(vector)
@@ -40,7 +44,6 @@ class FakeDetector():
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
 
 				print "Got transform!"
-				waiting = False
 				
 				for point in points:
 					# print "Point", point,
@@ -73,7 +76,16 @@ class FakeDetector():
 		return pixels
 
 	def fakeDetect(self):
-		#
+		pc = PointCloud()
+		
+		pc.header.stamp = rospy.Time.now()
+		pc.header.frame_id = 'odom'
+		pc.channels = []
+		pc.points.append(Point32(self.bagHandlePoint[0], self.bagHandlePoint[1], self.bagHandlePoint[2]))
+
+		self.pub.publish(pc)
+
+		time.sleep(0.5)
 		return self.transform3dToImg([self.bagHandlePoint])
 
 if __name__ == "__main__":
