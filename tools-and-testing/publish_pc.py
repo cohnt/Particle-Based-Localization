@@ -10,13 +10,18 @@ def talker():
 	while not rospy.is_shutdown():
 		pc = PointCloud()
 		
-		pc.header.stamp = rospy.Time.now()
-		pc.header.frame_id = 'map'
+		# pc.header.stamp = rospy.Time.now()
+		# pc.header.frame_id = 'map'
 
-		numPoints = 3
+		# numPoints = 3
+		# pc.channels = []
+		# for i in range(numPoints):
+		# 	pc.points.append(Point32(i, i, 0))
+
+		pc.header.stamp = rospy.Time.now()
+		pc.header.frame_id = 'odom'
 		pc.channels = []
-		for i in range(numPoints):
-			pc.points.append(Point32(i, i, 0))
+		pc.points.append(Point32(0.95, -0.5, 1.1))
 
 		pub.publish(pc)
 		print pc

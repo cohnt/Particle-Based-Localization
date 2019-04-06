@@ -2,11 +2,15 @@ import rospy
 import roslib
 import tf
 import math
+import time
+import sys
 import numpy as np
 
 from nav_msgs.msg import Odometry as OdometryMsg
 from geometry_msgs.msg import PointStamped as PointStampedMsg
 from geometry_msgs.msg import Point as PointMsg
+from sensor_msgs.msg import PointCloud, ChannelFloat32
+from geometry_msgs.msg import Point32
 from tf2_msgs.msg import TFMessage as TFMsg
 
 from cv2 import projectPoints
@@ -20,6 +24,8 @@ class FakeDetector():
 
 		self.tfListener = tf.TransformListener()
 
+		self.pub = rospy.Publisher(name, PointCloud, queue_size=10)
+
 	def unit_vector(self, vector):
 		return vector / np.linalg.norm(vector)
 
@@ -30,14 +36,17 @@ class FakeDetector():
 
 	def transform3dToImg(self, points):
 		pixels = []
+		waiting = False
 		while True:
 			try:
 				stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
 				pos, quat = self.tfListener.lookupTransform("/head_camera_rgb_optical_frame", "/odom", stamp)
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
+
+				print "Got transform!"
 				
 				for point in points:
-					print "Point", point,
+					# print "Point", point,
 
 					point = np.matmul(matTransform, point)
 
@@ -53,15 +62,30 @@ class FakeDetector():
 					pixel[0] = ((horiz / self.cameraFOV[0]) * self.imageDims[0])
 					pixel[1] = ((vert / self.cameraFOV[1]) * self.imageDims[1])
 
-					print " *becomes* ", pixel
+					# print " *becomes* ", pixel
 					pixels.append(pixel)
 				break
 			except:
-				print "Waiting for transform..."
+				if not waiting:
+					waiting = True
+					sys.stdout.write("Waiting for transform")
+				else:
+					sys.stdout.write('.')
+				sys.stdout.flush()
+				time.sleep(0.1)
 		return pixels
 
 	def fakeDetect(self):
-		#
+		pc = PointCloud()
+		
+		pc.header.stamp = rospy.Time.now()
+		pc.header.frame_id = 'odom'
+		pc.channels = []
+		pc.points.append(Point32(self.bagHandlePoint[0], self.bagHandlePoint[1], self.bagHandlePoint[2]))
+
+		self.pub.publish(pc)
+
+		time.sleep(0.5)
 		return self.transform3dToImg([self.bagHandlePoint])
 
 if __name__ == "__main__":

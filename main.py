@@ -5,13 +5,16 @@ from transformer import Transformer
 
 import rospy
 import numpy as np
-
-from random import random
+import random
 
 # TODO: Remove
 from fake_detector import FakeDetector
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
+
+numItersPerSample = 1
+numHist = 5
+randHist = True
 
 class HParticle():
 	def __init__(self, pos=[0, 0, 0]):
@@ -21,9 +24,9 @@ class HParticle():
 
 	def randomize(self):
 		self.pos = [
-			random()*(environmentBounds[0][1]-environmentBounds[0][0])+environmentBounds[0][0],
-			random()*(environmentBounds[1][1]-environmentBounds[1][0])+environmentBounds[1][0],
-			random()*(environmentBounds[2][1]-environmentBounds[2][0])+environmentBounds[2][0]
+			random.random()*(environmentBounds[0][1]-environmentBounds[0][0])+environmentBounds[0][0],
+			random.random()*(environmentBounds[1][1]-environmentBounds[1][0])+environmentBounds[1][0],
+			random.random()*(environmentBounds[2][1]-environmentBounds[2][0])+environmentBounds[2][0]
 		]
 
 	def setPrediction(self, prediction):
@@ -33,9 +36,9 @@ class HParticle():
 		return self.pos
 
 	def addNoise(self, noiseFactor):
-		self.pos[0] = self.pos[0] + (random()*2*noiseFactor - noiseFactor)
-		self.pos[1] = self.pos[1] + (random()*2*noiseFactor - noiseFactor)
-		self.pos[2] = self.pos[2] + (random()*2*noiseFactor - noiseFactor)
+		self.pos[0] = self.pos[0] + (random.random()*2*noiseFactor - noiseFactor)
+		self.pos[1] = self.pos[1] + (random.random()*2*noiseFactor - noiseFactor)
+		self.pos[2] = self.pos[2] + (random.random()*2*noiseFactor - noiseFactor)
 
 	def setError(self, error):
 		self.error = error
@@ -52,41 +55,59 @@ class HParticle():
 	def update(self, newData):
 		pass
 
-def metric(particle, observation):
-	# prediction = particle.getPrediction()
-	# return dist2(prediction, observation)
+def pointLineDist(point, line):
+	return np.linalg.norm(np.cross(line[1]-line[0], line[0]-point))/np.linalg.norm(line[1]-line[0])
 
-	# TODO TODO TODO
+def metric(particle, history):
+	best = []
+	indices = None
 
-	startPoint = observation[0]
-	endPoints = observation[1]
+	if randHist:
+		indices = random.sample(range(len(history)-1), min(5, len(history)-1))
+		indices.append(len(history)-1)
+	else:
+		indices = range(max(0, len(history)-5), len(history))
 
-	dists = []
-	for i in range(0, len(endPoints)):
-		d = np.linalg.norm(np.cross(endPoints[i]-startPoint, startPoint-particle.getPrediction()))/np.linalg.norm(endPoints[i]-startPoint)
-		dists.append(d)
+	for i in indices:
+		startPoint = history[i][0]
+		endPoints = history[i][1]
 
-	return np.min(dists)
+		dists = []
+		for i in range(0, len(endPoints)):
+			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
+			d = np.power(d, 0.25)
+			dists.append(d)
+
+		best.append(np.min(dists))
+	return np.sum(best)
 
 def main():
 	rospy.init_node("particle_based_tracking")
 
 	detector = FakeDetector("fake_detector")
 	transformer = Transformer("transformer")
-	pf = ParticleFilter(2500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
+	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
 	pf.generateParticles()
 	viz = PFViz(pf, "/odom", "myViz")
+
+	history = []
 
 	while not rospy.is_shutdown():
 		try:
 			pixels = detector.fakeDetect()
+			print "Got handles"
+
 			startPoint, endPoints = transformer.transform(pixels)
-			pf.measureParticles((startPoint[:-1], np.asarray(endPoints)[:,:-1]))
-			pf.calculateWeights()
-			pf.resample()
-			prediction = pf.predict()
-			pf.update(None)
-			viz.update()
+			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
+			for _ in range(0, numItersPerSample):
+				pf.measureParticles(history)
+				pf.calculateWeights()
+
+				prediction = pf.predict()
+				viz.update(history[-1])
+
+				pf.resample()
+				pf.update(None)
 		except KeyboardInterrupt:
 			break
 
