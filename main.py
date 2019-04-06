@@ -81,10 +81,10 @@ def main():
 			startPoint, endPoints = transformer.transform(pixels)
 			pf.measureParticles((startPoint[:-1], np.asarray(endPoints)[:,:-1]))
 			pf.calculateWeights()
-			pf.resample()
 			prediction = pf.predict()
-			pf.update(None)
 			viz.update()
+			pf.resample()
+			pf.update(None)
 		except KeyboardInterrupt:
 			break
 
