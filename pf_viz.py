@@ -20,9 +20,13 @@ class PFViz():
 		pc.header.stamp = rospy.Time.now()
 		pc.header.frame_id = self.frame
 
-		pc.channels = []
+		pc.channels = [ChannelFloat32()]
+		pc.channels[0].name = "weight"
+
 		for particle in self.pf.particles:
 			pc.points.append(Point32(particle.pos[0], particle.pos[1], particle.pos[2]))
+			pc.channels[0].values.append(particle.getWeight())
+			print particle.getWeight()
 
 		prediction = self.pf.predict()
 
