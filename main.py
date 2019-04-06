@@ -52,18 +52,16 @@ class HParticle():
 	def update(self, newData):
 		pass
 
+def pointLineDist(point, line):
+	return np.linalg.norm(np.cross(line[1]-line[0], line[0]-point))/np.linalg.norm(line[1]-line[0])
+
 def metric(particle, observation):
-	# prediction = particle.getPrediction()
-	# return dist2(prediction, observation)
-
-	# TODO TODO TODO
-
 	startPoint = observation[0]
 	endPoints = observation[1]
 
 	dists = []
 	for i in range(0, len(endPoints)):
-		d = np.linalg.norm(np.cross(endPoints[i]-startPoint, startPoint-particle.getPrediction()))/np.linalg.norm(endPoints[i]-startPoint)
+		d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
 		dists.append(d)
 
 	return np.min(dists)
