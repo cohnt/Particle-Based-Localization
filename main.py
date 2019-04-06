@@ -104,7 +104,7 @@ def main():
 				pf.calculateWeights()
 
 				prediction = pf.predict()
-				viz.update()
+				viz.update(history[-1])
 
 				pf.resample()
 				pf.update(None)
