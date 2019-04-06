@@ -67,6 +67,7 @@ def metric(particle, history):
 		dists = []
 		for i in range(0, len(endPoints)):
 			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
+			d = np.power(d, 0.5)
 			dists.append(d)
 
 		best.append(np.min(dists))
