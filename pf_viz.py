@@ -26,7 +26,6 @@ class PFViz():
 		for particle in self.pf.particles:
 			pc.points.append(Point32(particle.pos[0], particle.pos[1], particle.pos[2]))
 			pc.channels[0].values.append(particle.getWeight())
-			print particle.getWeight()
 
 		prediction = self.pf.predict()
 

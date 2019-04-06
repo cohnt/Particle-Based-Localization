@@ -2,6 +2,8 @@ import rospy
 import roslib
 import tf
 import math
+import time
+import sys
 import numpy as np
 
 from nav_msgs.msg import Odometry as OdometryMsg
@@ -30,14 +32,18 @@ class FakeDetector():
 
 	def transform3dToImg(self, points):
 		pixels = []
+		waiting = False
 		while True:
 			try:
 				stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
 				pos, quat = self.tfListener.lookupTransform("/head_camera_rgb_optical_frame", "/odom", stamp)
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
+
+				print "Got transform!"
+				waiting = False
 				
 				for point in points:
-					print "Point", point,
+					# print "Point", point,
 
 					point = np.matmul(matTransform, point)
 
@@ -53,11 +59,17 @@ class FakeDetector():
 					pixel[0] = ((horiz / self.cameraFOV[0]) * self.imageDims[0])
 					pixel[1] = ((vert / self.cameraFOV[1]) * self.imageDims[1])
 
-					print " *becomes* ", pixel
+					# print " *becomes* ", pixel
 					pixels.append(pixel)
 				break
 			except:
-				print "Waiting for transform..."
+				if not waiting:
+					waiting = True
+					sys.stdout.write("Waiting for transform")
+				else:
+					sys.stdout.write('.')
+				sys.stdout.flush()
+				time.sleep(0.1)
 		return pixels
 
 	def fakeDetect(self):
