@@ -10,7 +10,7 @@ import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 10
+numItersPerSample = 5
 numHist = 5
 randHist = True
 
