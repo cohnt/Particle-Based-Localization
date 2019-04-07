@@ -7,9 +7,6 @@ import rospy
 import numpy as np
 import random
 
-# TODO: Remove
-from fake_detector import FakeDetector
-
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
 numItersPerSample = 1
@@ -84,7 +81,7 @@ def metric(particle, history):
 def main():
 	rospy.init_node("particle_based_tracking")
 
-	detector = FakeDetector("fake_detector")
+	detector = Detector(visualize=True)
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
 	pf.generateParticles()
@@ -94,7 +91,10 @@ def main():
 
 	while not rospy.is_shutdown():
 		try:
-			pixels = detector.fakeDetect()
+			detector.getImage()
+			detector.processImage()
+			detector.updateDisplay()
+			pixels = detector.centroids[:]
 			print "Got handles"
 
 			startPoint, endPoints = transformer.transform(pixels)
