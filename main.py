@@ -95,7 +95,6 @@ def main():
 			detector.processImage()
 			detector.updateDisplay()
 			pixels = detector.centroids[:]
-			print "Got handles"
 
 			startPoint, endPoints = transformer.transform(pixels)
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))

@@ -46,7 +46,7 @@ class Transformer:
 
 					endAngs = angles * centeredPixel
 
-					print "Angs: %f \t\t\t %f" % (endAngs[0], endAngs[1])
+					# print "Angs: %f \t\t\t %f" % (endAngs[0], endAngs[1])
 
 					endRay = [math.sin(endAngs[0]), -43]
 

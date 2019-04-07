@@ -149,11 +149,11 @@ class Detector:
 			class_member_mask = (labels == k)
 			xy = np.matrix(guesses[class_member_mask])
 			centroid = np.mean(xy, axis=0)
-			print("Centroid cell: ", centroid)
+			# print("Centroid cell: ", centroid)
 			actualPos = [centroid[0, 1]*self.hogCellSize[0]+(0.5*(self.windowSize[0]*self.hogCellSize[0])),
 						 centroid[0, 0]*self.hogCellSize[1]+(0.5*(self.windowSize[1]*self.hogCellSize[1]))]
 			# self.centroids.append(tuple(np.ravel(centroid)))
-			print("Centroid pixel: ", actualPos)
+			# print("Centroid pixel: ", actualPos)
 			self.centroids.append(tuple(actualPos))
 			if self.visualize:
 				self.ax.add_patch(
@@ -167,7 +167,7 @@ class Detector:
 				)
 
 		endTime = time.time()
-		print(self.centroids)
+		# print(self.centroids)
 		print "Done! dt=%s" % (endTime - startTime)
 
 	def updateDisplay(self):
