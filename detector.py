@@ -35,12 +35,16 @@ class Detector:
 		self.imageTopic = imageTopic
 		self.imageMsg = None
 		self.image = None
+		self.imageStamp = None
 		self.hogDescriptor = None
 		self.hogImage = None
 
 		self.bridge = CvBridge()
 
 		self.dbscan = DBSCAN(eps=dbscanEpsilon, n_jobs=-1, min_samples=dbscanMinCluster)
+
+		self.positives = []
+		self.centroids = []
 
 		self.isHandleData = None
 		self.notHandleData = None
@@ -74,6 +78,7 @@ class Detector:
 		startTime = time.time()
 		try:
 			self.image = self.bridge.imgmsg_to_cv2(self.imageMsg, "bgr8")
+			self.imageStamp = self.imageMsg.header.stamp
 		except CvBridgeError, e:
 			print(e)
 			return
@@ -107,6 +112,7 @@ class Detector:
 			[p.remove() for p in reversed(self.ax.patches)]
 
 		print "Predicting image... ",
+		self.positives = []
 		startTime = time.time()
 		# Classify across the entire image with the sliding window detector
 		guesses = []
@@ -115,6 +121,9 @@ class Detector:
 				cell_id = (i, j)
 				if self.classifyCell(cell_id):
 					guesses.append(cell_id)
+					actualPos = [j*self.hogCellSize[0]+(0.5*(self.windowSize[0]*self.hogCellSize[0])),
+								 i*self.hogCellSize[1]+(0.5*(self.windowSize[1]*self.hogCellSize[1]))]
+					self.positives.append(actualPos)
 					if self.visualize:
 						self.ax.add_patch(
 							patches.Rectangle(
@@ -129,6 +138,7 @@ class Detector:
 		guesses = np.array(guesses)
 
 		# Cluster guesses with DBSCAN
+		self.centroids = []
 		self.dbscan.fit(guesses)
 		labels = self.dbscan.labels_
 		unique_labels = set(labels)
@@ -139,7 +149,12 @@ class Detector:
 			class_member_mask = (labels == k)
 			xy = np.matrix(guesses[class_member_mask])
 			centroid = np.mean(xy, axis=0)
-
+			print("Centroid cell: ", centroid)
+			actualPos = [centroid[0, 1]*self.hogCellSize[0]+(0.5*(self.windowSize[0]*self.hogCellSize[0])),
+						 centroid[0, 0]*self.hogCellSize[1]+(0.5*(self.windowSize[1]*self.hogCellSize[1]))]
+			# self.centroids.append(tuple(np.ravel(centroid)))
+			print("Centroid pixel: ", actualPos)
+			self.centroids.append(tuple(actualPos))
 			if self.visualize:
 				self.ax.add_patch(
 					patches.Rectangle(
@@ -152,6 +167,7 @@ class Detector:
 				)
 
 		endTime = time.time()
+		print(self.centroids)
 		print "Done! dt=%s" % (endTime - startTime)
 
 	def updateDisplay(self):
