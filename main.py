@@ -6,6 +6,7 @@ from transformer import Transformer
 import rospy
 import numpy as np
 import random
+import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
@@ -97,15 +98,41 @@ def main():
 
 			startPoint, endPoints = transformer.transform(pixels)
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
+			T0 = time.time()
 			for _ in range(0, numItersPerSample):
-				pf.measureParticles(history)
-				pf.calculateWeights()
+				print "Updating particle filter",
 
+				print "\tmeasuring",
+				t0 = time.time()
+				pf.measureParticles(history)
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
+				print "\tweighting",
+				t0 = time.time()
+				pf.calculateWeights()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
+				print "\tpredicting",
+				t0 = time.time()
 				prediction = pf.predict()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
 				viz.update(history[-1])
 
+				print "\tresampling",
+				t0 = time.time()
 				pf.resample()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
 				pf.update(None)
+
+				print
+			T1 = time.time()
+			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
 			break
 
