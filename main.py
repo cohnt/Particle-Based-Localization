@@ -9,7 +9,7 @@ import random
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 1
+numItersPerSample = 10
 numHist = 5
 randHist = True
 
