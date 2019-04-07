@@ -81,7 +81,7 @@ def metric(particle, history):
 def main():
 	rospy.init_node("particle_based_tracking")
 
-	detector = Detector(visualize=True)
+	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
 	pf.generateParticles()
@@ -93,7 +93,6 @@ def main():
 		try:
 			detector.getImage()
 			detector.processImage()
-			detector.updateDisplay()
 			pixels = detector.centroids[:]
 
 			startPoint, endPoints = transformer.transform(pixels)
