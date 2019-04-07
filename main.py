@@ -6,13 +6,11 @@ from transformer import Transformer
 import rospy
 import numpy as np
 import random
-
-# TODO: Remove
-from fake_detector import FakeDetector
+import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 1
+numItersPerSample = 5
 numHist = 5
 randHist = True
 
@@ -84,7 +82,7 @@ def metric(particle, history):
 def main():
 	rospy.init_node("particle_based_tracking")
 
-	detector = FakeDetector("fake_detector")
+	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
 	pf.generateParticles()
@@ -94,20 +92,47 @@ def main():
 
 	while not rospy.is_shutdown():
 		try:
-			pixels = detector.fakeDetect()
-			print "Got handles"
+			detector.getImage()
+			detector.processImage()
+			pixels = detector.centroids[:]
 
 			startPoint, endPoints = transformer.transform(pixels)
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
+			T0 = time.time()
 			for _ in range(0, numItersPerSample):
-				pf.measureParticles(history)
-				pf.calculateWeights()
+				print "Updating particle filter",
 
+				print "\tmeasuring",
+				t0 = time.time()
+				pf.measureParticles(history)
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
+				print "\tweighting",
+				t0 = time.time()
+				pf.calculateWeights()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
+				print "\tpredicting",
+				t0 = time.time()
 				prediction = pf.predict()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
 				viz.update(history[-1])
 
+				print "\tresampling",
+				t0 = time.time()
 				pf.resample()
+				t1 = time.time()
+				print "dt=%f" % (t1-t0),
+
 				pf.update(None)
+
+				print
+			T1 = time.time()
+			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
 			break
 
