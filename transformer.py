@@ -10,9 +10,10 @@ from geometry_msgs.msg import Point as PointMsg
 from tf2_msgs.msg import TFMessage as TFMsg
 
 class Transformer:
-	def __init__(self, name, FOV=np.array([54.0, 45.0]) * math.pi / 180.0):
+	def __init__(self, name, FOV=np.array([54.0, 45.0]) * math.pi / 180.0, imgShape=np.array([640, 480])):
 		self.name = name
 		self.FOV = FOV
+		self.imgShape = imgShape
 		self.depth = 1.0
 
 		self.tfListener = tf.TransformListener()
@@ -22,8 +23,8 @@ class Transformer:
 		vertFOV = self.FOV[1]
 		depth = 1.0
 
-		horizRadsPerPixel = horizFOV / 640.0
-		vertRadsPerPixel = vertFOV / 480.0
+		horizRadsPerPixel = horizFOV / self.imgShape[0]
+		vertRadsPerPixel = vertFOV / self.imgShape[1]
 
 		angles = np.array([horizRadsPerPixel, vertRadsPerPixel])
 
@@ -41,7 +42,11 @@ class Transformer:
 				for point in points:
 					endPixel = np.array(point)
 
-					endAngs = angles * endPixel
+					centeredPixel = endPixel - (self.imgShape / 2)
+
+					endAngs = angles * centeredPixel
+
+					print "Angs: %f \t\t\t %f" % (endAngs[0], endAngs[1])
 
 					endRay = [math.sin(endAngs[0]), -43]
 
