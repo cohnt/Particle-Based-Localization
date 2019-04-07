@@ -2,6 +2,8 @@ import rospy
 import roslib
 import tf
 import math
+import sys
+import time
 import numpy as np
 
 from nav_msgs.msg import Odometry as OdometryMsg
@@ -30,11 +32,14 @@ class Transformer:
 
 		newPoints = []
 
+		waiting = False
 		while True:
 			try:
 				stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
 				pos, quat = self.tfListener.lookupTransform("/odom", "/head_camera_rgb_optical_frame", stamp)
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
+
+				print "Got transform!"
 
 				startPoint = np.array([0, 0, 0, 1])
 				startPoint = np.matmul(matTransform, startPoint)
@@ -60,6 +65,12 @@ class Transformer:
 					newPoints.append(endPoint.copy())
 				break
 			except:
-				print "Waiting for transform..."
+				if not waiting:
+					waiting = True
+					sys.stdout.write("Waiting for transform")
+				else:
+					sys.stdout.write('.')
+				sys.stdout.flush()
+				time.sleep(0.1)
 
 		return (startPoint, newPoints)
