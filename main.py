@@ -10,8 +10,8 @@ import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 5
-numHist = 5
+numItersPerSample = 1
+numHist = 3
 randHist = True
 
 class HParticle():
@@ -53,8 +53,12 @@ class HParticle():
 	def update(self, newData):
 		pass
 
+def squaredNorm(point):
+	return np.sum(np.multiply(point, point))
+
 def pointLineDist(point, line):
-	return np.linalg.norm(np.cross(line[1]-line[0], line[0]-point))/np.linalg.norm(line[1]-line[0])
+	#
+	return squaredNorm(np.cross(line[1]-line[0], line[0]-point))/squaredNorm(line[1]-line[0])
 
 def metric(particle, history):
 	best = []
@@ -73,11 +77,10 @@ def metric(particle, history):
 		dists = []
 		for i in range(0, len(endPoints)):
 			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
-			d = np.power(d, 0.25)
 			dists.append(d)
 
 		best.append(np.min(dists))
-	return np.sum(best)
+	return np.sum(np.power(best, 0.125))
 
 def main():
 	rospy.init_node("particle_based_tracking")
@@ -86,7 +89,7 @@ def main():
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
 	pf.generateParticles()
-	viz = PFViz(pf, "/odom", "myViz")
+	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 
 	history = []
 
