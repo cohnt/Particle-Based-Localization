@@ -10,8 +10,8 @@ import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 5 # Number of times to iterate the particle filter per scan received
-numHist = 3           # Number of scans to use in weighting particles
+numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
+numHist = 1           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
 class HParticle(Particle):
@@ -71,7 +71,7 @@ def metric(particle, history):
 	# the most recent one. Otherwise, select the n most recent scan. Note that if n=1,
 	# then this doesn't matter, as it will always use the most recent scan.
 	if randHist:
-		indices = random.sample(range(len(history)-1), min(5, len(history)-1))
+		indices = random.sample(range(len(history)-1), min(numHist, len(history)-1))
 		indices.append(len(history)-1)
 	else:
 		indices = range(max(0, len(history)-5), len(history))
@@ -110,6 +110,7 @@ def main():
 
 	while not rospy.is_shutdown():
 		try:
+			print "\nWaiting for the next image."
 			detector.getImage()
 			detector.processImage()
 			pixels = detector.centroids[:]
