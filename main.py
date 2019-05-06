@@ -14,7 +14,7 @@ numItersPerSample = 1
 numHist = 3
 randHist = True
 
-class HParticle():
+class HParticle(Particle):
 	def __init__(self, pos=[0, 0, 0]):
 		self.pos = [0, 0, 0]
 		self.error = 0
