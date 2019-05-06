@@ -10,9 +10,9 @@ import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 
-numItersPerSample = 1
-numHist = 3
-randHist = True
+numItersPerSample = 5 # Number of times to iterate the particle filter per scan received
+numHist = 3           # Number of scans to use in weighting particles
+randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
 class HParticle(Particle):
 	def __init__(self, pos=[0, 0, 0]):
@@ -21,6 +21,7 @@ class HParticle(Particle):
 		self.weight = 0
 
 	def randomize(self):
+		# For dimension i, and range [x,y), we let self.pos[i]~Unif[x, y)
 		self.pos = [
 			random.random()*(environmentBounds[0][1]-environmentBounds[0][0])+environmentBounds[0][0],
 			random.random()*(environmentBounds[1][1]-environmentBounds[1][0])+environmentBounds[1][0],
@@ -34,9 +35,11 @@ class HParticle(Particle):
 		return self.pos
 
 	def addNoise(self, noiseFactor):
+		# Add noise n~Unif[-noiseFactor, noiseFactor) to each dimension
 		self.pos[0] = self.pos[0] + (random.random()*2*noiseFactor - noiseFactor)
 		self.pos[1] = self.pos[1] + (random.random()*2*noiseFactor - noiseFactor)
 		self.pos[2] = self.pos[2] + (random.random()*2*noiseFactor - noiseFactor)
+		# TODO: Add noise of magnitude n~Unif[0,noiseFactor) and uniform random direction
 
 	def setError(self, error):
 		self.error = error
@@ -57,19 +60,25 @@ def squaredNorm(point):
 	return np.sum(np.multiply(point, point))
 
 def pointLineDist(point, line):
-	#
+	# Returns the distance between a point [x,y,z] and a line [[x1,y1,z1],[x2,y2,z2]]
 	return squaredNorm(np.cross(line[1]-line[0], line[0]-point))/squaredNorm(line[1]-line[0])
 
 def metric(particle, history):
 	best = []
 	indices = None
 
+	# If randHist is true, select n-1 random entries from the history of scans, as well as
+	# the most recent one. Otherwise, select the n most recent scan. Note that if n=1,
+	# then this doesn't matter, as it will always use the most recent scan.
 	if randHist:
 		indices = random.sample(range(len(history)-1), min(5, len(history)-1))
 		indices.append(len(history)-1)
 	else:
 		indices = range(max(0, len(history)-5), len(history))
 
+	# For each scan selected, we need to find the distance from the prediction to the
+	# ray which is closest to the particle. Note that the start and end points of the
+	# lines are stored in separate lists (history[i][0] and history[i][1])
 	for i in indices:
 		startPoint = history[i][0]
 		endPoints = history[i][1]
@@ -80,17 +89,23 @@ def metric(particle, history):
 			dists.append(d)
 
 		best.append(np.min(dists))
+
+	# TODO: Figure out why this distance penalty gives a tighter particle cluster. I would
+	#       expect that higher powers would have this effect, but they end up giving wider
+	#       distributions and fractional powers (i.e. radicals, i.e. nth roots) give a
+	#       tighter distribution
 	return np.sum(np.power(best, 0.125))
 
 def main():
 	rospy.init_node("particle_based_tracking")
 
+	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
-	pf.generateParticles()
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 
+	pf.generateParticles()
 	history = []
 
 	while not rospy.is_shutdown():
@@ -99,7 +114,7 @@ def main():
 			detector.processImage()
 			pixels = detector.centroids[:]
 
-			startPoint, endPoints = transformer.transform(pixels)
+			startPoint, endPoints = transformer.transform(pixels) # Convert images pixels to 3D points in the /odom frame
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
 			T0 = time.time()
 			for _ in range(0, numItersPerSample):
