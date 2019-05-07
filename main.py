@@ -108,6 +108,8 @@ def main():
 	pf.generateParticles()
 	history = []
 
+	raw_input("Program ready. Press [Enter] to start. Then [Ctrl] + [c] to stop.")
+
 	while not rospy.is_shutdown():
 		try:
 			print "\nWaiting for the next image."
@@ -154,6 +156,8 @@ def main():
 			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
 			break
+
+	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
 
 if __name__ == "__main__":
 	main()
