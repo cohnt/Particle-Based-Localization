@@ -10,6 +10,7 @@ class PFViz():
 		self.pf = pf
 		self.frame = frame
 		self.name = name
+		self.idMax = 0
 
 		self.queue_size = queue_size
 		self.markerColor = markerColor
@@ -87,6 +88,19 @@ class PFViz():
 		for marker in markerArray.markers:
 			marker.id = id
 			id = id + 1
+
+		if id > self.idMax:
+			self.idMax = id
+		else:
+			while id < self.idMax:
+				marker = MarkerMsg()
+				marker.header.stamp = rospy.Time.now()
+				marker.header.frame_id = self.frame
+				marker.action = marker.DELETE
+				marker.id = id
+				id = id + 1
+
+				markerArray.markers.append(marker)
 
 		self.pcPub.publish(pc)
 		self.markerPub.publish(markerArray)
