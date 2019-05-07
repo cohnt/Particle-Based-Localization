@@ -9,6 +9,7 @@ import random
 import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
+actual = [0.95, -0.5, 1.1]
 
 numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
 numHist = 1           # Number of scans to use in weighting particles
@@ -158,6 +159,8 @@ def main():
 			break
 
 	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
+	print "Goal prediction: [%f,%f,%f]" % tuple(actual)
+	print "Error: %f cm" % (100.0 * np.sqrt(squaredNorm(np.asarray(actual)-pf.predict())))
 
 if __name__ == "__main__":
 	main()
