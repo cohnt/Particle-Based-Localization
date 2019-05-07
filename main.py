@@ -12,7 +12,7 @@ environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 actual = [0.95, -0.5, 1.1]
 
 numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
-numHist = 1           # Number of scans to use in weighting particles
+numHist = 2           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
 class HParticle(Particle):
@@ -109,7 +109,7 @@ def main():
 	pf.generateParticles()
 	history = []
 
-	raw_input("Program ready. Press [Enter] to start. Then [Ctrl] + [c] to stop.")
+	raw_input("\nProgram ready. Press [Enter] to start. Then [Ctrl] + [c] to stop.")
 
 	while not rospy.is_shutdown():
 		try:
