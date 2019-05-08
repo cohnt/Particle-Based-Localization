@@ -35,7 +35,7 @@ class Transformer:
 		waiting = False
 		while True:
 			try:
-				self.tfListener.waitForTransformFull("/odom", stamp, "/head_camera_rgb_optical_frame", stamp, "/odom", rospy.Duration(2.0))
+				self.tfListener.waitForTransformFull("/odom", stamp, "/head_camera_rgb_optical_frame", stamp, "/odom", rospy.Duration(0.5))
 				pos, quat = self.tfListener.lookupTransformFull("/odom", stamp, "/head_camera_rgb_optical_frame", stamp, "/odom")
 				# stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
