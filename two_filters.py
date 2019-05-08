@@ -158,6 +158,7 @@ def main():
 			detector.getImage()
 			detector.processImage()
 			pixels = detector.centroids[:]
+			stamp = detector.imageStamp
 
 			startPoint, endPoints, success = transformer.transform(pixels, stamp) # Convert images pixels to 3D points in the /odom frame
 			if not success:
