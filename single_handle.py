@@ -12,7 +12,7 @@ environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 actual = [0.95, -0.5, 1.1]
 
 numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
-numHist = 2           # Number of scans to use in weighting particles
+numHist = 3           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
 class HParticle(Particle):
@@ -104,7 +104,7 @@ def metric(particle, history):
 	return np.sum(np.power(best, 0.125))
 
 def main():
-	rospy.init_node("particle_based_tracking")
+	rospy.init_node("particle_based_tracking", disable_signals=True)
 
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
@@ -117,7 +117,7 @@ def main():
 
 	raw_input("\nProgram ready. Press [Enter] to start. Then [Ctrl] + [c] to stop.")
 
-	while not rospy.is_shutdown():
+	while not False:
 		try:
 			print "\nWaiting for the next image."
 			detector.getImage()
@@ -171,6 +171,44 @@ def main():
 	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
 	print "Goal prediction: [%f,%f,%f]" % tuple(actual)
 	print "Error: %f cm" % (100.0 * np.sqrt(squaredNorm(np.asarray(actual)-pf.predict())))
+
+	T0 = time.time()
+	tmp = 0
+	while tmp < 10 and not rospy.is_shutdown():
+		tmp = tmp + 1
+		print "Updating particle filter",
+
+		print "\tmeasuring",
+		t0 = time.time()
+		pf.measureParticles(history)
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tweighting",
+		t0 = time.time()
+		pf.calculateWeights()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tpredicting",
+		t0 = time.time()
+		prediction = pf.predict()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		viz.update(history[-1])
+
+		print "\tresampling",
+		t0 = time.time()
+		pf.resample()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		pf.update(None)
+
+		print
+	T1 = time.time()
+	print "Total particle filter update time %f" % (T1-T0)
 
 if __name__ == "__main__":
 	main()
