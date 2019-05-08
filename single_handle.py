@@ -11,7 +11,7 @@ import time
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 actual = [0.95, -0.5, 1.1]
 
-numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
+numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
 numHist = 2           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
@@ -64,6 +64,11 @@ def pointLineDist(point, line):
 	# Returns the distance between a point [x,y,z] and a line [[x1,y1,z1],[x2,y2,z2]]
 	return squaredNorm(np.cross(line[1]-line[0], line[0]-point))/squaredNorm(line[1]-line[0])
 
+def angularDist(point1, point2):
+	num = np.dot(point1, point2)
+	denom = np.sqrt(squaredNorm(point1)*squaredNorm(point2))
+	return np.arccos(num/denom)
+
 def metric(particle, history):
 	best = []
 	indices = None
@@ -86,7 +91,8 @@ def metric(particle, history):
 
 		dists = []
 		for i in range(0, len(endPoints)):
-			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
+			# d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
+			d = angularDist(particle.getPrediction()-startPoint, endPoints[i]-startPoint)
 			dists.append(d)
 
 		best.append(np.min(dists))
@@ -103,7 +109,7 @@ def main():
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
-	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.05, averageType="weighted")
+	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 
 	pf.generateParticles()
