@@ -11,7 +11,7 @@ import time
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 expectedHandleDist = 0.12
 
-numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
+numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
 numHist = 2           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
@@ -137,7 +137,7 @@ def metric2(particle, (history, otherPrediction)):
 	#       tighter distribution
 
 	handleDist = np.sqrt(squaredNorm(np.asarray(particle.getPrediction()) - np.asarray(otherPrediction)))
-	handlePenalty = 10.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
+	handlePenalty = 5.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
 
 	return (np.sum(np.power(best, 0.125)) + 1) * handlePenalty
 
@@ -147,8 +147,8 @@ def main():
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
-	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.2, noiseFactor=0.05, averageType="weighted")
-	pf2 = ParticleFilter(500, HParticle, metric2, explorationFactor=0.2, noiseFactor=0.05, averageType="weighted")
+	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.2, noiseFactor=0.1, averageType="weighted")
+	pf2 = ParticleFilter(500, HParticle, metric2, explorationFactor=0.2, noiseFactor=0.1, averageType="weighted")
 	
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 	viz2 = PFViz(pf2, "/odom", "myViz2", markerColor=[1, 1, 1, 1])
