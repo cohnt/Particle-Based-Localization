@@ -20,7 +20,7 @@ class Transformer:
 
 		self.tfListener = tf.TransformListener()
 
-	def transform(self, points):
+	def transform(self, points, stamp):
 		horizFOV = self.FOV[0]
 		vertFOV = self.FOV[1]
 		depth = 1.0
@@ -35,8 +35,9 @@ class Transformer:
 		waiting = False
 		while True:
 			try:
-				stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
-				pos, quat = self.tfListener.lookupTransform("/odom", "/head_camera_rgb_optical_frame", stamp)
+				self.tfListener.waitForTransformFull("/odom", stamp, "/head_camera_rgb_optical_frame", stamp, "/odom", rospy.Duration(2.0))
+				pos, quat = self.tfListener.lookupTransformFull("/odom", stamp, "/head_camera_rgb_optical_frame", stamp, "/odom")
+				# stamp = self.tfListener.getLatestCommonTime("/head_camera_rgb_optical_frame", "/odom")
 				matTransform = self.tfListener.fromTranslationRotation(pos, quat)
 
 				print "Got transform!"
@@ -65,12 +66,8 @@ class Transformer:
 					newPoints.append(endPoint.copy())
 				break
 			except:
-				if not waiting:
-					waiting = True
-					sys.stdout.write("Waiting for transform")
-				else:
-					sys.stdout.write('.')
+				sys.stdout.write("Skipping this image.")
 				sys.stdout.flush()
-				time.sleep(0.1)
+				return (None, None, False)
 
-		return (startPoint, newPoints)
+		return (startPoint, newPoints, True)

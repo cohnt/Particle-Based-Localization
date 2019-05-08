@@ -117,8 +117,12 @@ def main():
 			detector.getImage()
 			detector.processImage()
 			pixels = detector.centroids[:]
+			stamp = detector.imageStamp
 
-			startPoint, endPoints = transformer.transform(pixels) # Convert images pixels to 3D points in the /odom frame
+			startPoint, endPoints, success = transformer.transform(pixels, stamp) # Convert images pixels to 3D points in the /odom frame
+			if not success:
+				continue
+			
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
 			T0 = time.time()
 			for _ in range(0, numItersPerSample):
