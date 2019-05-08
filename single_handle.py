@@ -9,11 +9,12 @@ import random
 import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
-actual = [0.95, -0.5, 1.1]
 
 numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
-numHist = 3           # Number of scans to use in weighting particles
-randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
+numHist = 3            # Number of scans to use in weighting particles
+randHist = True        # If true, select random scans from the history, as opposed to the most recent ones
+
+numExtraIters = 10     # Number of extra iterations to run after sensor data is finished
 
 class HParticle(Particle):
 	def __init__(self, pos=[0, 0, 0]):
@@ -117,7 +118,7 @@ def main():
 
 	raw_input("\nProgram ready. Press [Enter] to start. Then [Ctrl] + [c] to stop.")
 
-	while not False:
+	while True:
 		try:
 			print "\nWaiting for the next image."
 			detector.getImage()
@@ -169,13 +170,11 @@ def main():
 			break
 
 	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
-	print "Goal prediction: [%f,%f,%f]" % tuple(actual)
-	print "Error: %f cm" % (100.0 * np.sqrt(squaredNorm(np.asarray(actual)-pf.predict())))
 
 	T0 = time.time()
-	tmp = 0
-	while tmp < 10 and not rospy.is_shutdown():
-		tmp = tmp + 1
+	extraIters = 0
+	while extraIters < numExtraIters and not rospy.is_shutdown():
+		extraIters = extraIters + 1
 		print "Updating particle filter",
 
 		print "\tmeasuring",
