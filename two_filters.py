@@ -170,6 +170,9 @@ def main():
 		try:
 			print "\nWaiting for the next image."
 			detector.getImage()
+			if not transformer.canTransform("/odom", "/head_camera_rgb_optical_frame", "/odom", detector.imageStamp):
+				continue
+
 			detector.processImage()
 			pixels = detector.centroids[:]
 			stamp = detector.imageStamp

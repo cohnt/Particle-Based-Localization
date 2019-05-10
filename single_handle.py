@@ -123,6 +123,9 @@ def main():
 		try:
 			print "\nWaiting for the next image."
 			detector.getImage()
+			if not transformer.canTransform("/odom", "/head_camera_rgb_optical_frame", "/odom", detector.imageStamp):
+				continue
+
 			detector.processImage()
 			pixels = detector.centroids[:]
 			stamp = detector.imageStamp
@@ -170,7 +173,7 @@ def main():
 		except KeyboardInterrupt:
 			break
 
-	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
+	print "Initial estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
 
 	T0 = time.time()
 	extraIters = 0
@@ -211,6 +214,8 @@ def main():
 		pf.noiseFactor = pf.noiseFactor * noiseReduceRate
 	T1 = time.time()
 	print "Total particle filter update time %f" % (T1-T0)
+
+	print "Final estimate for handle position: [%f,%f,%f]" % tuple(pf.predict())
 
 if __name__ == "__main__":
 	main()
