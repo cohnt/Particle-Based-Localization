@@ -11,8 +11,8 @@ import time
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
 expectedHandleDist = 0.12
 
-numItersPerSample = 3 # Number of times to iterate the particle filter per scan received
-numHist = 2           # Number of scans to use in weighting particles
+numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
+numHist = 3           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
 class HParticle(Particle):
@@ -147,8 +147,8 @@ def main():
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
-	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.2, noiseFactor=0.1, averageType="weighted")
-	pf2 = ParticleFilter(500, HParticle, metric2, explorationFactor=0.2, noiseFactor=0.1, averageType="weighted")
+	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
+	pf2 = ParticleFilter(500, HParticle, metric2, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
 	
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 	viz2 = PFViz(pf2, "/odom", "myViz2", markerColor=[1, 1, 1, 1])
@@ -172,6 +172,10 @@ def main():
 				continue
 			
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
+
+			if len(history) < numHist:
+				continue
+
 			T0 = time.time()
 			for _ in range(0, numItersPerSample):
 				print "Updating particle filter",
@@ -241,76 +245,6 @@ def main():
 			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
 			break
-
-	# numHist = 3
-	# randHist = True
-	# T0 = time.time()
-	# for _ in range(0, 10):
-	# 	print "Updating particle filter",
-
-	# 	print "\tmeasuring",
-	# 	t0 = time.time()
-	# 	pf.measureParticles(history)
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	print "\tweighting",
-	# 	t0 = time.time()
-	# 	pf.calculateWeights()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	print "\tpredicting",
-	# 	t0 = time.time()
-	# 	prediction = pf.predict()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	viz.update(history[-1])
-
-	# 	print "\tresampling",
-	# 	t0 = time.time()
-	# 	pf.resample()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	pf.update(None)
-
-	# 	print
-
-	# 	print "Updating particle filter 2",
-
-	# 	print "\tmeasuring",
-	# 	t0 = time.time()
-	# 	pf2.measureParticles((history, pf.predict()))
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	print "\tweighting",
-	# 	t0 = time.time()
-	# 	pf2.calculateWeights()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	print "\tpredicting",
-	# 	t0 = time.time()
-	# 	prediction = pf2.predict()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	viz2.update(history[-1])
-
-	# 	print "\tresampling",
-	# 	t0 = time.time()
-	# 	pf2.resample()
-	# 	t1 = time.time()
-	# 	print "dt=%f" % (t1-t0),
-
-	# 	pf2.update(None)
-
-	# 	print
-	# T1 = time.time()
-	# print "Total particle filter update time %f" % (T1-T0)
 
 	print "Final estimate for handle 1 position: [%f,%f,%f]" % tuple(pf.predict())
 	print "Final estimate for handle 2 position: [%f,%f,%f]" % tuple(pf2.predict())
