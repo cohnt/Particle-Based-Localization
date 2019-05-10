@@ -15,6 +15,9 @@ numItersPerSample = 10 # Number of times to iterate the particle filter per scan
 numHist = 3           # Number of scans to use in weighting particles
 randHist = True       # If true, select random scans from the history, as opposed to the most recent ones
 
+numExtraIters = 40     # Number of extra iterations to run after sensor data is finished
+noiseReduceRate = 0.95 # This is multiplied by the noise factor after each extra iteration
+
 class HParticle(Particle):
 	def __init__(self, pos=[0, 0, 0]):
 		self.pos = [0, 0, 0]
@@ -137,12 +140,12 @@ def metric2(particle, (history, otherPrediction)):
 	#       tighter distribution
 
 	handleDist = np.sqrt(squaredNorm(np.asarray(particle.getPrediction()) - np.asarray(otherPrediction)))
-	handlePenalty = 5.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
+	handlePenalty = 1.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
 
 	return (np.sum(np.power(best, 0.125)) + 1) * handlePenalty
 
 def main():
-	rospy.init_node("particle_based_tracking")
+	rospy.init_node("particle_based_tracking", disable_signals=True)
 
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
@@ -245,6 +248,82 @@ def main():
 			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
 			break
+
+	print "Initial estimate for handle 1 position: [%f,%f,%f]" % tuple(pf.predict())
+	print "Initial estimate for handle 2 position: [%f,%f,%f]" % tuple(pf2.predict())
+
+	T0 = time.time()
+	extraIters = 0
+	while extraIters < numExtraIters and not rospy.is_shutdown():
+		print "Updating particle filter",
+
+		print "\tmeasuring",
+		t0 = time.time()
+		pf.measureParticles(history)
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tweighting",
+		t0 = time.time()
+		pf.calculateWeights()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tpredicting",
+		t0 = time.time()
+		prediction = pf.predict()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		viz.update(history[-1])
+
+		print "\tresampling",
+		t0 = time.time()
+		pf.resample()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		pf.update(None)
+
+		print
+
+		print "Updating particle filter 2",
+
+		print "\tmeasuring",
+		t0 = time.time()
+		pf2.measureParticles((history, pf.predict()))
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tweighting",
+		t0 = time.time()
+		pf2.calculateWeights()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		print "\tpredicting",
+		t0 = time.time()
+		prediction = pf2.predict()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		viz2.update(history[-1])
+
+		print "\tresampling",
+		t0 = time.time()
+		pf2.resample()
+		t1 = time.time()
+		print "dt=%f" % (t1-t0),
+
+		pf2.update(None)
+
+		print
+
+		extraIters = extraIters + 1
+		pf.noiseFactor = pf.noiseFactor * noiseReduceRate
+		pf2.noiseFactor = pf2.noiseFactor * noiseReduceRate
+	T1 = time.time()
+	print "Total particle filter update time %f" % (T1-T0)
 
 	print "Final estimate for handle 1 position: [%f,%f,%f]" % tuple(pf.predict())
 	print "Final estimate for handle 2 position: [%f,%f,%f]" % tuple(pf2.predict())
