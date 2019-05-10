@@ -14,7 +14,8 @@ numItersPerSample = 10 # Number of times to iterate the particle filter per scan
 numHist = 3            # Number of scans to use in weighting particles
 randHist = True        # If true, select random scans from the history, as opposed to the most recent ones
 
-numExtraIters = 10     # Number of extra iterations to run after sensor data is finished
+numExtraIters = 40     # Number of extra iterations to run after sensor data is finished
+noiseReduceRate = 0.95 # This is multiplied by the noise factor after each extra iteration
 
 class HParticle(Particle):
 	def __init__(self, pos=[0, 0, 0]):
@@ -110,7 +111,7 @@ def main():
 	# See respective files for details on class constructors
 	detector = Detector(visualize=False)
 	transformer = Transformer("transformer")
-	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
+	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.25, noiseFactor=0.1, averageType="weighted")
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 
 	pf.generateParticles()
@@ -174,7 +175,6 @@ def main():
 	T0 = time.time()
 	extraIters = 0
 	while extraIters < numExtraIters and not rospy.is_shutdown():
-		extraIters = extraIters + 1
 		print "Updating particle filter",
 
 		print "\tmeasuring",
@@ -206,6 +206,9 @@ def main():
 		pf.update(None)
 
 		print
+		
+		extraIters = extraIters + 1
+		pf.noiseFactor = pf.noiseFactor * noiseReduceRate
 	T1 = time.time()
 	print "Total particle filter update time %f" % (T1-T0)
 
