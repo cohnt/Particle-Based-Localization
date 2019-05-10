@@ -140,7 +140,11 @@ def metric2(particle, (history, otherPrediction)):
 	#       tighter distribution
 
 	handleDist = np.sqrt(squaredNorm(np.asarray(particle.getPrediction()) - np.asarray(otherPrediction)))
-	handlePenalty = 1.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
+	# handlePenalty = 1.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
+	# handlePenalty = (1.0 / (10.0 * handleDist)) + 1.0
+	handlePenalty1 = 1.0 * (1.0 - np.exp(-1.0 * (handleDist - expectedHandleDist)**2)) + 1.0
+	handlePenalty2 = (expectedHandleDist / handleDist) + 1.0
+	handlePenalty = handlePenalty1 * handlePenalty2
 
 	return (np.sum(np.power(best, 0.125)) + 1) * handlePenalty
 
