@@ -71,6 +71,7 @@ class Detector:
 
 	def getImage(self):
 		self.imageMsg = rospy.wait_for_message(self.imageTopic, ImageMsg)
+		self.imageStamp = self.imageMsg.header.stamp
 
 	def processImage(self):
 		# Convert to OpenCV2 image format
@@ -78,7 +79,6 @@ class Detector:
 		startTime = time.time()
 		try:
 			self.image = self.bridge.imgmsg_to_cv2(self.imageMsg, "bgr8")
-			self.imageStamp = self.imageMsg.header.stamp
 		except CvBridgeError, e:
 			print(e)
 			return
