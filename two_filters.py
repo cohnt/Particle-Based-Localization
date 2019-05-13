@@ -83,7 +83,7 @@ def metric(particle, history):
 		indices = random.sample(range(len(history)-1), min(numHist, len(history)-1))
 		indices.append(len(history)-1)
 	else:
-		indices = range(max(0, len(history)-5), len(history))
+		indices = range(max(0, len(history)-numHist), len(history))
 
 	# For each scan selected, we need to find the distance from the prediction to the
 	# ray which is closest to the particle. Note that the start and end points of the
@@ -117,7 +117,7 @@ def metric2(particle, (history, otherPrediction)):
 		indices = random.sample(range(len(history)-1), min(numHist, len(history)-1))
 		indices.append(len(history)-1)
 	else:
-		indices = range(max(0, len(history)-5), len(history))
+		indices = range(max(0, len(history)-numHist), len(history))
 
 	# For each scan selected, we need to find the distance from the prediction to the
 	# ray which is closest to the particle. Note that the start and end points of the
