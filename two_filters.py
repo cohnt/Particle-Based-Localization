@@ -9,7 +9,7 @@ import random
 import time
 
 environmentBounds = [[-2, 2], [-2, 2], [0, 2]]
-expectedHandleDist = 0.12
+expectedHandleDist = 0.1
 
 numItersPerSample = 10 # Number of times to iterate the particle filter per scan received
 numHist = 3           # Number of scans to use in weighting particles
@@ -128,8 +128,8 @@ def metric2(particle, (history, otherPrediction)):
 
 		dists = []
 		for i in range(0, len(endPoints)):
-			# d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
-			d = angularDist(particle.getPrediction()-startPoint, endPoints[i]-startPoint)
+			d = pointLineDist(particle.getPrediction(), [startPoint, endPoints[i]])
+			# d = angularDist(particle.getPrediction()-startPoint, endPoints[i]-startPoint)
 			dists.append(d)
 
 		best.append(np.min(dists))
@@ -220,37 +220,37 @@ def main():
 
 				print
 
-				print "Updating particle filter 2",
+				# print "Updating particle filter 2",
 
-				print "\tmeasuring",
-				t0 = time.time()
-				pf2.measureParticles((history, pf.predict()))
-				t1 = time.time()
-				print "dt=%f" % (t1-t0),
+				# print "\tmeasuring",
+				# t0 = time.time()
+				# pf2.measureParticles((history, pf.predict()))
+				# t1 = time.time()
+				# print "dt=%f" % (t1-t0),
 
-				print "\tweighting",
-				t0 = time.time()
-				pf2.calculateWeights()
-				t1 = time.time()
-				print "dt=%f" % (t1-t0),
+				# print "\tweighting",
+				# t0 = time.time()
+				# pf2.calculateWeights()
+				# t1 = time.time()
+				# print "dt=%f" % (t1-t0),
 
-				print "\tpredicting",
-				t0 = time.time()
-				prediction = pf2.predict()
-				t1 = time.time()
-				print "dt=%f" % (t1-t0),
+				# print "\tpredicting",
+				# t0 = time.time()
+				# prediction = pf2.predict()
+				# t1 = time.time()
+				# print "dt=%f" % (t1-t0),
 
-				viz2.update(history[-1])
+				# viz2.update(history[-1])
 
-				print "\tresampling",
-				t0 = time.time()
-				pf2.resample()
-				t1 = time.time()
-				print "dt=%f" % (t1-t0),
+				# print "\tresampling",
+				# t0 = time.time()
+				# pf2.resample()
+				# t1 = time.time()
+				# print "dt=%f" % (t1-t0),
 
-				pf2.update(None)
+				# pf2.update(None)
 
-				print
+				# print
 			T1 = time.time()
 			print "Total particle filter update time %f" % (T1-T0)
 		except KeyboardInterrupt:
