@@ -2,6 +2,7 @@ from detector import Detector
 from particle_filter import ParticleFilter, Particle
 from pf_viz import PFViz
 from transformer import Transformer
+from grabber import Grabber
 
 import rospy
 import numpy as np
@@ -156,9 +157,9 @@ def main():
 	transformer = Transformer("transformer")
 	pf = ParticleFilter(500, HParticle, metric, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
 	pf2 = ParticleFilter(500, HParticle, metric2, explorationFactor=0.1, noiseFactor=0.1, averageType="weighted")
-	
 	viz = PFViz(pf, "/odom", "myViz", markerColor=[0, 0, 0, 1])
 	viz2 = PFViz(pf2, "/odom", "myViz2", markerColor=[1, 1, 1, 1])
+	grabber = Grabber() # TODO: Arguments
 
 	pf.generateParticles()
 	pf2.generateParticles()
@@ -184,7 +185,8 @@ def main():
 			history.append(tuple((startPoint[:-1], np.asarray(endPoints)[:,:-1])))
 
 			if len(history) < numHist:
-				continue
+				# continue
+				pass
 
 			T0 = time.time()
 			for _ in range(0, numItersPerSample):
@@ -334,6 +336,12 @@ def main():
 
 	print "Final estimate for handle 1 position: [%f,%f,%f]" % tuple(pf.predict())
 	print "Final estimate for handle 2 position: [%f,%f,%f]" % tuple(pf2.predict())
+
+	executeGrab = raw_input("Execute grab? (y/n)")
+	if executeGrab == 'y':
+		print "Executing grab."
+		grabber.grab(pf.predict(), pf2.predict(), "/odom")
+
 
 if __name__ == "__main__":
 	main()
