@@ -13,6 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf2_msgs
   visualization_msgs
+  actionlib
+)
+
+add_action_files(
+  DIRECTORY action
+  FILES GrabBag.action
 )
 
 ## System dependencies are found with CMake's conventions
@@ -23,6 +29,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
+
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs actionlib_msgs geometry_msgs
+)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -107,7 +119,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES grab_bag
-#  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf2_msgs visualization_msgs
+ CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf2_msgs visualization_msgs actionlib
 #  DEPENDS system_lib
 )
 
