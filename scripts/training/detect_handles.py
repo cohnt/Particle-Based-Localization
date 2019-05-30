@@ -20,6 +20,8 @@ import os, os.path
 
 # np.set_printoptions(threshold='nan')
 
+image_directory = "/home/tommy/Documents/Programming/Work/Dr_Jenkins/workspaces/pbl_ws/src/grab_bag/scripts/training/"
+
 fname = "camera_image0.jpeg"
 imNum = 0
 cell_size = (8, 8) # x, y
@@ -173,7 +175,7 @@ def onkeypress(event):
 def loadImage():
 	global fd, fname, imNum, fig, ax, imgObj, firstImage, imageMode
 	print "Loading camera_image%s.jpeg" % imNum
-	fname = "camera_image%s.jpeg" % imNum
+	fname = image_directory + "camera_image%s.jpeg" % imNum
 	try:
 		image = imread(fname)
 		print "Done!"

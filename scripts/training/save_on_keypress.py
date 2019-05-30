@@ -12,6 +12,8 @@ bridge = CvBridge()
 imNum = -1
 lastImNum = -1
 
+image_directory = "/home/tommy/Documents/Programming/Work/Dr_Jenkins/workspaces/pbl_ws/src/grab_bag/scripts/training/"
+
 # Keylogger from StackOverflow
 # https://stackoverflow.com/questions/13207678/whats-the-simplest-way-of-detecting-keyboard-input-in-python-from-the-terminal
 import sys
@@ -52,7 +54,7 @@ def image_callback(msg):
         # Save your OpenCV2 image as a jpeg 
         # print imNum
         if imNum != lastImNum:
-            fname = 'camera_image%s.jpeg' % imNum
+            fname = image_directory + 'camera_image%s.jpeg' % imNum
             cv2.imwrite(fname, cv2_img)
             print "Done! Filename %s" % fname
             lastImNum = imNum
