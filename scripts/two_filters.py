@@ -344,7 +344,7 @@ def main():
 	executeGrab = raw_input("Execute grab? (y/n)")
 	if executeGrab == 'y':
 		print "Executing grab."
-		grabber.grab(pf.predict(), pf2.predict(), "/odom")
+		grabber.grab(pf.predict(), pf2.predict(), "odom")
 
 
 if __name__ == "__main__":
