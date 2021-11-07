@@ -12,6 +12,16 @@ How to use
 6. Train a model using `rosrun grab_bag detect_handles.py`
 7. Localize handles using `rosrun grab_bag single_handle.py` or `rosrun grab_bag two_filters.py`
 
+---
+
+Related Repositories
+
+https://github.com/cohnt/ROS-Tools
+
+https://github.com/cohnt/2D-Bag-Localization-Sim
+
+---
+
 Useful Commands
 
 ---
