@@ -2,10 +2,10 @@ How to use
 
 1. Clone the project into a catkin workspace `git clone git@github.com:cohnt/Particle-Based-Localization.git`
 2. Adjust folder paths in the following script files
-..* In `single_handle.py`, change `path_to_model_file`
-..* In `two_filters.py`, change `path_to_model_file`
-..* In `training/detect_handles.py`, change `image_directory`
-..* In `training/save_on_keypress.py`, change `image_directory`
+    * In `single_handle.py`, change `path_to_model_file`
+    * In `two_filters.py`, change `path_to_model_file`
+    * In `training/detect_handles.py`, change `image_directory`
+    * In `training/save_on_keypress.py`, change `image_directory`
 3. `catkin_make`
 4. `source devel/setup.bash`
 5. Gather a training dataset using `rosrun grab_bag save_on_keypress.py`
