@@ -1,0 +1,11 @@
+#goal definition
+int32 shelf_id
+geometry_msgs/Pose pre_grasp_pose
+geometry_msgs/Pose grasp_pose
+int32 cartesian_max_try
+---
+#result definition
+bool success
+---
+#feedback
+string feedback
